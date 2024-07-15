@@ -7,7 +7,9 @@ using namespace codegen;
 std::map<void const*, size_t> codegen::idMap;
 
 std::string generateMacHeader(std::string filebase, std::string file_ext) {
-    return fmt::format(R"GEN(#pragma once
+    auto header_guard = file_ext == "cpp" ? "" : "#pragma once";
+
+    return fmt::format(R"GEN({2}
 #include <Geode/platform/platform.hpp>
 
 #ifdef GEODE_IS_ARM_MAC
@@ -15,7 +17,7 @@ std::string generateMacHeader(std::string filebase, std::string file_ext) {
 #else
 #include "{0}Intel.{1}"
 #endif
-)GEN", filebase, file_ext);
+)GEN", filebase, file_ext, header_guard);
 }
 
 std::string generateMacFolderHeader(std::string folder, std::string filename) {
@@ -50,7 +52,7 @@ int main(int argc, char** argv) try {
     //     ghc::filesystem::current_path(rootDir);
 
     //     Root root = broma::parse_file("Entry.bro");
-    //     writeFile(ghc::filesystem::path(argv[3]), generateJsonInterface(root));
+    //     writeFile(ghc::filesystem::path(argv[3]), generateTextInterface(root));
     //     return 0;
     // }
 
@@ -112,7 +114,7 @@ int main(int argc, char** argv) try {
             generatedSourceChanged = true;
         }
 
-        writeFile(writeDir / "CodegenDataArm.txt", generateJsonInterface(root));
+        writeFile(writeDir / "CodegenDataArm.txt", generateTextInterface(root));
 
         codegen::platform = Platform::MacIntel;
 
@@ -123,7 +125,7 @@ int main(int argc, char** argv) try {
             generatedSourceChanged = true;
         }
 
-        writeFile(writeDir / "CodegenDataIntel.txt", generateJsonInterface(root));
+        writeFile(writeDir / "CodegenDataIntel.txt", generateTextInterface(root));
 
         codegen::platform = Platform::Mac;
 
@@ -146,9 +148,10 @@ int main(int argc, char** argv) try {
         writeFile(writeDir / "GeneratedBinding.hpp", generateBindingHeader(root, writeDir / "binding"));
         writeFile(writeDir / "GeneratedPredeclare.hpp", generatePredeclareHeader(root));
         writeFile(writeDir / "GeneratedSource.cpp", generateBindingSource(root));
-        writeFile(writeDir / "CodegenData.txt", generateJsonInterface(root));
+        writeFile(writeDir / "CodegenData.txt", generateTextInterface(root));
     }
 
+    writeFile(writeDir / "CodegenData.json", generateJsonInterface(root).dump(0));
 }
 
 catch (std::exception& e) {
