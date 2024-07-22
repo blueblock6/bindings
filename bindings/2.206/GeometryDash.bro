@@ -1826,7 +1826,9 @@ class CheckpointObject : cocos2d::CCNode {
 		return nullptr;
 	}
 
-	TodoReturn getObject();
+	GameObject* getObject() = win inline {
+		return m_physicalCheckpointObject;
+	}
 	void setObject(GameObject*);
 
 	virtual bool init() = win 0x767c0, imac 0xbfd90, m1 0xab33c;
