@@ -3473,7 +3473,7 @@ class DailyLevelPage : FLAlertLayer, FLAlertLayerProtocol, GJDailyLevelDelegate,
     void claimLevelReward(DailyLevelNode*, GJGameLevel*, cocos2d::CCPoint) = win 0xd06b0, m1 0x1d3470, imac 0x220580;
     void createDailyNode(GJGameLevel*, bool, float, bool) = win 0xcee40, imac 0x21f7b0, m1 0x1d2700;
     void createNodeIfLoaded();
-    void downloadAndCreateNode();
+    void downloadAndCreateNode() = win 0xceca0;
     void exitDailyNode(DailyLevelNode*, float) = imac 0x21fc20, m1 0x1d2b34;
     int getDailyTime() = imac 0x2202a0;
     gd::string getDailyTimeString(int timeLeft) = win 0xcf200, imac 0x21f120, m1 0x1d1e6c;
