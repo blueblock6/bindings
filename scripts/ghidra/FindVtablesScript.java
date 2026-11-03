@@ -3,9 +3,8 @@
 // @category GeodeSDK
 
 import java.util.HashMap;
+import java.util.List;
 
-import ghidra.program.model.symbol.Namespace;
-import ghidra.program.model.listing.GhidraClass;
 import ghidra.app.util.NamespaceUtils;
 import ghidra.app.script.GhidraScript;
 import ghidra.app.util.demangler.DemanglerUtil;
@@ -16,7 +15,6 @@ import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.util.exception.InvalidInputException;
 import ghidra.program.model.symbol.Symbol;
-import ghidra.program.model.symbol.SourceType;
 
 public class FindVtablesScript extends GhidraScript {
     HashMap<Long, String> typeinfoNames = new HashMap<Long, String>();
@@ -70,7 +68,8 @@ public class FindVtablesScript extends GhidraScript {
         for (Address addr = dataBlock.getStart(); dataBlock.contains(addr); addr = addr.add(8)) {
             // get the pointer value
             try {
-                Address tiNamePtr = toAddr(getLong(addr));
+                // for some reason, some of the typeinfo names start with 0x80 00 00 00 00 00 00 00
+                Address tiNamePtr = toAddr(getLong(addr) & 0x7FFFFFFFFFFFFFFFL);
                 if (!textBlock.contains(tiNamePtr)) continue;
                 // print("Found typeinfo name: " + tiNamePtr.getOffset() + "\n");
 
@@ -103,8 +102,7 @@ public class FindVtablesScript extends GhidraScript {
         for (Address addr = dataBlock.getStart(); dataBlock.contains(addr); addr = addr.add(8)) {
             try {
                 // get the pointer value
-                long offset = getLong(addr);
-                Address tiNamePtr = toAddr(offset);
+                long offset = getLong(addr) & 0x7FFFFFFFFFFFFFFFL;
                 if (!typeinfoNames.containsKey(offset)) continue;
 
                 typeinfos.put(addr.getOffset() - 8, typeinfoNames.get(offset));
@@ -123,8 +121,7 @@ public class FindVtablesScript extends GhidraScript {
         for (Address addr = dataBlock.getStart(); dataBlock.contains(addr); addr = addr.add(8)) {
             try {
                 // get the pointer value
-                long offset = getLong(addr);
-                Address tiPtr = toAddr(offset);
+                long offset = getLong(addr) & 0x7FFFFFFFFFFFFFFFL;
                 if (!typeinfos.containsKey(offset)) continue;
 
                 Address firstFunc = toAddr(getLong(addr.add(8)));
@@ -149,9 +146,9 @@ public class FindVtablesScript extends GhidraScript {
         // create the vtables
         for (Long offset : vtables.keySet()) {
             String name = vtables.get(offset);
-            DemangledObject demangled = DemanglerUtil.demangle("_ZTV" + name);
+            List<DemangledObject> demangled = DemanglerUtil.demangle(currentProgram, "_ZTV" + name, null);
             try {
-                demangled.applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
+                demangled.get(0).applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
             }
             catch (Exception e) {
                 continue;
@@ -161,9 +158,9 @@ public class FindVtablesScript extends GhidraScript {
         // create the typeinfos
         for (Long offset : typeinfos.keySet()) {
             String name = typeinfos.get(offset);
-            DemangledObject demangled = DemanglerUtil.demangle("_ZTI" + name);
+            List<DemangledObject> demangled = DemanglerUtil.demangle(currentProgram, "_ZTI" + name, null);
             try {
-                demangled.applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
+                demangled.get(0).applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
             }
             catch (Exception e) {
                 continue;
@@ -173,9 +170,9 @@ public class FindVtablesScript extends GhidraScript {
         // create the typeinfo names
         for (Long offset : typeinfoNames.keySet()) {
             String name = typeinfoNames.get(offset);
-            DemangledObject demangled = DemanglerUtil.demangle("_ZTS" + name);
+            List<DemangledObject> demangled = DemanglerUtil.demangle(currentProgram, "_ZTS" + name, null);
             try {
-                demangled.applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
+                demangled.get(0).applyTo(currentProgram, toAddr(offset), new DemanglerOptions(), monitor);
             }
             catch (Exception e) {
                 continue;
@@ -187,8 +184,14 @@ public class FindVtablesScript extends GhidraScript {
             
             if (vtableOffsets.containsKey(offset) && vtableOffsets.get(offset) > 0) {
                 try {
+                    String symbolName = "vtable-" + vtableOffsets.get(offset);
+                    // If a symbol with the same name already exists, delete it
+                    Symbol existingSymbol = currentProgram.getSymbolTable().getSymbol(symbolName, toAddr(offset), symbol.getParentNamespace());
+                    if (existingSymbol != null) {
+                        existingSymbol.delete();
+                    }
                     // println("Found vtable at " + offset);
-                    symbol.setName("vtable-" + vtableOffsets.get(offset), symbol.getSource());
+                    symbol.setName(symbolName, symbol.getSource());
                 }
                 catch (Exception e) {
                     // println("Failed to rename vtable at " + e.getMessage());

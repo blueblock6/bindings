@@ -35,6 +35,10 @@ jobs:
           os: ubuntu-22.04
           id: linux
           extra_flags: ''
+        - name: Linux ARM64
+          os: ubuntu-22.04-arm
+          id: linux-aarch64
+          extra_flags: ''
 
     name: Build ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -66,7 +70,7 @@ jobs:
     # - name: Update LLVM (Windows)
     #   shell: bash
     #   run: |
-    #     curl -L https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/LLVM-17.0.6-win64.exe -o llvm-inst.exe
+    #     curl -L https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-win64.exe -o llvm-inst.exe
     #     7z x llvm-inst.exe -ollvm bin/clang.exe bin/clang++.exe bin/lld-link.exe bin/llvm-rc.exe bin/*.dll lib/clang/*/include/*
     #     echo "$GITHUB_WORKSPACE/llvm/bin" >> $GITHUB_PATH
     #   if: matrix.config.id == 'win'
@@ -79,7 +83,7 @@ jobs:
         sudo apt install gcc-12 g++-12
         sudo ln -sf /usr/bin/gcc-12 /usr/bin/clang
         sudo ln -sf /usr/bin/g++-12 /usr/bin/clang++
-      if: matrix.config.id == 'linux'
+      if: matrix.config.id == 'linux' || matrix.config.id == 'linux-aarch64'
 
     - name: Configure
       run: >
@@ -119,10 +123,13 @@ jobs:
         mv geode-codegen-win/Codegen.exe geode-codegen-win.exe
         mv geode-codegen-mac/Codegen geode-codegen-mac-temp
         mv geode-codegen-linux/Codegen geode-codegen-linux-temp
+        mv geode-codegen-linux-aarch64/Codegen geode-codegen-linux-arm64-temp
         rmdir geode-codegen-mac
         rmdir geode-codegen-linux
+        rmdir geode-codegen-linux-aarch64
         mv geode-codegen-mac-temp geode-codegen-mac
         mv geode-codegen-linux-temp geode-codegen-linux
+        mv geode-codegen-linux-arm64-temp geode-codegen-linux-arm64
 
     - name: Update Codegen Release
       uses: andelf/nightly-release@main
@@ -136,3 +143,4 @@ jobs:
           ./geode-codegen-win.exe
           ./geode-codegen-mac
           ./geode-codegen-linux
+          ./geode-codegen-linux-arm64

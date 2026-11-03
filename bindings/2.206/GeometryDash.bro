@@ -4117,8 +4117,8 @@ class EditorUI : cocos2d::CCLayer, FLAlertLayerProtocol, ColorSelectDelegate, GJ
 	void redoLastAction(cocos2d::CCObject*) = win 0x10dd30;
 	void reloadCustomItems() = win 0xe1190, ios 0x3f13c8, mac inline {
 		GameManager* gm = GameManager::sharedState();
-		int buttonsPerRow = gm->getIntGameVariable("0049");
-		int buttonRows = gm->getIntGameVariable("0050");
+		int buttonsPerRow = gm->getIntGameVariable(GameVar::EditorButtonsPerRow);
+		int buttonRows = gm->getIntGameVariable(GameVar::EditorButtonRows);
 		cocos2d::CCArray* customItems = createCustomItems();
 		m_buttonBar->loadFromItems(customItems,buttonsPerRow,buttonRows,true);
 	}
@@ -6710,7 +6710,7 @@ class GameObject : CCSpritePlus {
 	bool m_maybeBlackChildIsBlendable;
 	bool m_editorEnabled;
 	bool m_isGroupDisabled;
-	bool m_unk28B;
+	bool m_isGroupDisabledTemp;
 	bool m_notLinked;
 
 	// somehow related to property 155 and 156 if anyone wants to reverse engineer
@@ -6984,7 +6984,7 @@ class GameObject : CCSpritePlus {
 	float m_areaOpacityRelated2;
 	int m_areaOpacityRelated3;
 	int m_unk52C;
-	bool m_unk530;
+	bool m_hasDynamicallySaved; // m_unk530
 	bool m_maybeIsUiObject;
 	bool m_unk532;
 }
@@ -7148,7 +7148,7 @@ class GameStatsManager : cocos2d::CCNode {
 	}
 	int getItemUnlockStateLite(int, UnlockType);
 	gd::string getLevelKey(GJGameLevel* level) = win inline {
-		return getLevelKey(level->m_levelID, level->m_levelType != GJLevelType::Local, level->m_dailyID > 0, level->m_gauntletLevel);
+		return getLevelKey(level->m_levelID, level->m_levelType != GJLevelType::Main, level->m_dailyID > 0, level->m_gauntletLevel);
 	}
 	gd::string getLevelKey(int, bool, bool, bool) = win 0x1d3950, m1 0x60dcc, imac 0x6ceb0;
 	TodoReturn getListRewardKey(GJLevelList*);
@@ -8862,7 +8862,7 @@ class GJDropDownLayerDelegate {
 	virtual void dropDownLayerWillClose(GJDropDownLayer*) {}
 }
 
-[[link(android), depends(DynamicMoveCalculation)]]
+[[link(android), depends(DynamicMoveCalculation), depends(EffectManagerState), depends(PulseEffectAction), depends(TouchToggleAction), depends(CollisionTriggerAction), depends(ToggleTriggerAction), depends(SpawnTriggerAction), depends(GroupCommandObject2), depends(OpacityEffectAction), depends(CountTriggerAction), depends(TimerItem), depends(TimerTriggerAction)]]
 class GJEffectManager : cocos2d::CCNode {
 	// virtual ~GJEffectManager();
 	// GJEffectManager();
@@ -16300,7 +16300,7 @@ class SelectSFXSortLayer : FLAlertLayer {
 	SelectSFXSortDelegate* m_delegate;
 }
 
-[[link(android)]]
+[[link(android), depends(SequenceTriggerState)]]
 class SequenceTriggerGameObject : ChanceTriggerGameObject {
 	// virtual ~SequenceTriggerGameObject();
 

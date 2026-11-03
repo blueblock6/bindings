@@ -1,14 +1,9 @@
 #include "Shared.hpp"
 
-#include <iostream>
-#include <set>
-
 std::string generateTextInterface(Root const& root) {
     std::string output;
 
-    for (auto& c : root.classes) {        
-        if (c.name == "cocos2d") continue;
-
+    for (auto& c : root.classes) {
         for (auto& f : c.fields) {
             if (auto fn = f.get_as<FunctionBindField>()) {
                 auto status = codegen::getStatus(*fn);
@@ -19,7 +14,7 @@ std::string generateTextInterface(Root const& root) {
 
                 if (
                     (
-                        (status == BindStatus::Unbindable || status == BindStatus::Missing) && 
+                        (status == BindStatus::Unbindable || status == BindStatus::Missing) &&
                         codegen::platformNumber(fn->binds) == -1
                     ) || (
                         codegen::platformNumber(fn->binds) == 0x9999999
@@ -28,7 +23,7 @@ std::string generateTextInterface(Root const& root) {
                     // skip unbinded functions
                     continue;
                 }
-                else if (status != BindStatus::NeedsBinding && !codegen::shouldAndroidBind(fn)) {
+                else if (status != BindStatus::NeedsBinding) {
                     continue;
                 }
                 output += fmt::format("{}::{} - {:#x}\n", c.name, fn->prototype.name, codegen::platformNumber(fn->binds));
@@ -36,18 +31,61 @@ std::string generateTextInterface(Root const& root) {
         }
     }
 
+    for (auto& f : root.functions) {
+        auto status = codegen::getStatus(f);
+
+        if (status == BindStatus::Inlined) {
+            continue;
+        }
+
+        if (
+            (
+                (status == BindStatus::Unbindable || status == BindStatus::Missing) &&
+                codegen::platformNumber(f.binds) == -1
+            ) || (
+                codegen::platformNumber(f.binds) == 0x9999999
+            )
+        ) {
+            // skip unbinded functions
+            continue;
+        }
+        else if (status != BindStatus::NeedsBinding) {
+            continue;
+        }
+        output += fmt::format("{} - {:#x}\n", f.prototype.name, codegen::platformNumber(f.binds));
+    }
+
     return output;
 }
 
 static matjson::Value bindingOnPlatform(Platform p, FunctionBindField const* fn) {
     auto status = codegen::getStatusWithPlatform(p, *fn);
-    if (status == BindStatus::Inlined) {
-        return "inline";
+    switch (status) {
+        case BindStatus::Inlined: return "inline";
+        case BindStatus::Binded: return "link";
+        case BindStatus::NeedsRebinding: return "rebind";
+        case BindStatus::Missing: return "missing";
+        default: break;
     }
-    if (status == BindStatus::Binded) {
-        return "link";
-    }
+
     auto addr = codegen::platformNumberWithPlatform(p, fn->binds);
+    if (addr >= 0) {
+        return addr;
+    }
+    return nullptr;
+}
+
+static matjson::Value bindingOnPlatform(Platform p, Function const& fn) {
+    auto status = codegen::getStatusWithPlatform(p, fn);
+    switch (status) {
+        case BindStatus::Inlined: return "inline";
+        case BindStatus::Binded: return "link";
+        case BindStatus::NeedsRebinding: return "rebind";
+        case BindStatus::Missing: return "missing";
+        default: break;
+    }
+
+    auto addr = codegen::platformNumberWithPlatform(p, fn.binds);
     if (addr >= 0) {
         return addr;
     }
@@ -56,12 +94,13 @@ static matjson::Value bindingOnPlatform(Platform p, FunctionBindField const* fn)
 
 matjson::Value generateJsonInterface(Root const& root) {
     std::vector<matjson::Value> classes;
-    
-    for (auto& c : root.classes) {        
-        if (c.name == "cocos2d") continue;
 
-        // Array because 
+    for (auto& c : root.classes) {
+        // Array because
         std::vector<matjson::Value> functions;
+        std::vector<matjson::Value> fields;
+        std::vector<matjson::Value> bases;
+
         for (auto& f : c.fields) {
             if (auto fn = f.get_as<FunctionBindField>()) {
                 std::vector<matjson::Value> args;
@@ -95,18 +134,63 @@ matjson::Value generateJsonInterface(Root const& root) {
                         { "android64", bindingOnPlatform(Platform::Android64, fn) },
                     }) },
                     { "docs", fn->prototype.attributes.docs },
+                    { "line", f.line },
                     { "kind", functionType },
                 }));
             }
+            else if (auto m = f.get_as<MemberField>()) {
+                fields.push_back(matjson::makeObject({
+                    { "name", m->name },
+                    { "type", m->type.name },
+                    { "line", f.line },
+                    { "count", m->count }
+                }));
+            }
         }
+        for (auto& sc : c.superclasses) {
+            bases.push_back(sc.name);
+        }
+
         classes.push_back(matjson::makeObject({
             { "name", c.name },
             { "functions", functions },
+            { "fields", fields },
+            { "bases", bases },
+            { "source", std::filesystem::path(c.source).filename().string() },
+            { "line", c.line },
+        }));
+    }
+
+    std::vector<matjson::Value> functions;
+    for (auto& f : root.functions) {
+        std::vector<matjson::Value> args;
+        for (auto const& [ty, name] : f.prototype.args) {
+            args.push_back(matjson::makeObject({
+                { "type", ty.name },
+                { "name", name },
+            }));
+        }
+        functions.push_back(matjson::makeObject({
+            { "name", f.prototype.name },
+            { "args", args },
+            { "return", f.prototype.ret.name },
+            { "bindings", matjson::makeObject({
+                { "win",       bindingOnPlatform(Platform::Windows, f) },
+                { "imac",      bindingOnPlatform(Platform::MacIntel, f) },
+                { "m1",        bindingOnPlatform(Platform::MacArm, f) },
+                { "ios",       bindingOnPlatform(Platform::iOS, f) },
+                { "android32", bindingOnPlatform(Platform::Android32, f) },
+                { "android64", bindingOnPlatform(Platform::Android64, f) },
+            }) },
+            { "docs", f.prototype.attributes.docs },
+            { "source", std::filesystem::path(f.source).filename().string() },
+            { "line", f.line },
         }));
     }
 
     // Return object in case we might want to return non-classes info in the future
     return matjson::makeObject({
-        { "classes", classes }
+        { "classes", classes },
+        { "functions", functions }
     });
 }

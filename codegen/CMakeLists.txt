@@ -3,9 +3,9 @@ project(Codegen LANGUAGES C CXX)
 
 include(../cmake/CPM.cmake)
 
-CPMAddPackage("gh:fmtlib/fmt#11.0.2")
-CPMAddPackage("gh:geode-sdk/Broma#26217a4")
-CPMAddPackage("gh:geode-sdk/json@3.2.1")
+CPMAddPackage("gh:fmtlib/fmt#12.2.0")
+CPMAddPackage("gh:geode-sdk/Broma#6793a56")
+CPMAddPackage("gh:geode-sdk/json@3.3.1")
 
 target_compile_definitions(fmt PUBLIC -DFMT_CONSTEVAL=)
 
@@ -19,15 +19,16 @@ add_executable(${PROJECT_NAME}
 	src/AndroidSymbol.cpp
 	src/WindowsSymbol.cpp
 	src/BindingGen.cpp
+	src/InlineGen.cpp
 	src/JsonInterfaceGen.cpp
 	src/ModifyGen.cpp
 	src/PredeclareGen.cpp
 	src/SourceGen.cpp
 )
-target_compile_features(Codegen PUBLIC cxx_std_17)
+target_compile_features(Codegen PUBLIC cxx_std_20)
 
 target_link_libraries(Codegen PRIVATE fmt::fmt Broma mat-json)
-target_include_directories(Codegen PRIVATE 
+target_include_directories(Codegen PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 

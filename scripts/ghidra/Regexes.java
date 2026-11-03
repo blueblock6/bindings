@@ -56,9 +56,11 @@ public class Regexes {
                 "(?:(?:(?<return>{0})\\s+(?<name>{2}))|(?<destructor>~{2})|(?<constructor>{2}))" +
                 // Grab the parameters
                 "\\(\\s*(?<params>(?:{1}\\s*,?\\s*)*)\\)" +
+                // Grab possible qualifiers
+                "(?<qualifiers>(?:\\s+const)?)" +
                 "(?:"+
                     // Grab the platforms
-                    "(?:\\s*=\\s*(?<platforms>(?:\\w+\\s+(?:0x[0-9a-fA-F]+|inline)\\s*,?\\s*)+))" + 
+                    "(?:\\s*=\\s*(?<platforms>(?:(?:\\w+\\s+)?(?:0x[0-9a-fA-F]+|inline)\\s*,?\\s*)+))" + 
                     // Or the body
                     "|(?<inlinebody>(?=\\s*\\'{'))" +
                     // Or where we can add platforms
@@ -84,7 +86,7 @@ public class Regexes {
                 "\\(\\s*(?<params>(?:{1}\\s*,?\\s*)*)\\)" +
                 "(?:" +
                     // Grab the platforms
-                    "(?:\\s*=\\s*(?<platforms>(?:\\w+\\s+(?:0x[0-9a-fA-F]+|inline)\\s*,?\\s*)+))" +
+                    "(?:\\s*=\\s*(?<platforms>(?:(?:\\w+\\s+)?(?:0x[0-9a-fA-F]+|inline)\\s*,?\\s*)+))" +
                     // Or the body
                     "|(?<inlinebody>(?=\\s*\\'{'))" +
                     // Or where we can add platforms
@@ -129,7 +131,7 @@ public class Regexes {
     );
     public static final Pattern GRAB_CLASS = grabClass("(?:\\w+::)*\\w+");
     public static final Pattern GRAB_TYPE = generateRecursiveRegex(
-        "(?<lconst>\\bconst\\s+)?(?<sign>\\b(?:signed|unsigned)\\s+)?(?<name>(?:\\w+::)*\\w+)(?<template><(?:{0})(?:\\s*,\\s*(?:{0}))*>)?(?<rconst>\\s+const\\b)?(?<ptr>\\s*\\*+)?(?<ref>\\s*&+)?",
+        "(?<lconst>\\bconst\\s+)?(?<sign>\\b(?:signed|unsigned)\\s+)?(?<name>(?:\\w+::)*\\w+)(?<template><(?:{0})(?:\\s*,\\s*(?:{0}))*>)?(?<rconst>\\s+const\\b)?(?<ptr>\\s*\\*+)?(?<ref>\\s*&+)?(?:\\s+const)?",
         3,
         "__depth_limit",
         Pattern.DOTALL

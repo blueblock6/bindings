@@ -4116,8 +4116,8 @@ class EditorUI : cocos2d::CCLayer, FLAlertLayerProtocol, ColorSelectDelegate, GJ
     void redoLastAction(cocos2d::CCObject*) = win 0x110170;
     void reloadCustomItems() {
     	GameManager* gm = GameManager::sharedState();
-    	int buttonsPerRow = gm->getIntGameVariable("0049");
-    	int buttonRows = gm->getIntGameVariable("0050");
+    	int buttonsPerRow = gm->getIntGameVariable(GameVar::EditorButtonsPerRow);
+    	int buttonRows = gm->getIntGameVariable(GameVar::EditorButtonRows);
     	cocos2d::CCArray* customItems = createCustomItems();
     	m_buttonBar->loadFromItems(customItems,buttonsPerRow,buttonRows,true);
     }
@@ -6709,7 +6709,7 @@ class GameObject : CCSpritePlus {
     bool m_unk288;
     bool m_editorEnabled;
     bool m_isGroupDisabled;
-    bool m_unk28B;
+    bool m_isGroupDisabledTemp;
     bool m_unk28c;
 
     // somehow related to property 155 and 156 if anyone wants to reverse engineer
@@ -6975,7 +6975,7 @@ class GameObject : CCSpritePlus {
     float m_areaOpacityRelated2;
     int m_areaOpacityRelated3;
     int m_unk52C;
-    bool m_unk530;
+    bool m_hasDynamicallySaved; // m_unk530
     bool m_unk531;
     bool m_unk532;
 }
@@ -7139,7 +7139,7 @@ class GameStatsManager : cocos2d::CCNode {
     }
     int getItemUnlockStateLite(int, UnlockType);
     gd::string getLevelKey(GJGameLevel* level) {
-    	return getLevelKey(level->m_levelID, level->m_levelType != GJLevelType::Local, level->m_dailyID > 0, level->m_gauntletLevel);
+    	return getLevelKey(level->m_levelID, level->m_levelType != GJLevelType::Main, level->m_dailyID > 0, level->m_gauntletLevel);
     }
     gd::string getLevelKey(int, bool, bool, bool) = win 0x1dac30;
     TodoReturn getListRewardKey(GJLevelList*);

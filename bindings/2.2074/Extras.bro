@@ -8,7 +8,21 @@ class FMODSound {
 }
 
 class AdvancedFollowInstance {
-	GameObject* m_gameObject;
+	AdvancedFollowInstance() {}
+	AdvancedFollowInstance(AdvancedFollowTriggerObject* object, int groupID, int targetID, int otherID, int unknown, int controlID) {
+		m_gameObject = object;
+		m_group = groupID;
+		m_objectKey = targetID;
+		m_controlId = controlID;
+		m_otherObjectKey = otherID;
+		m_relatedToGJGameStateUnkUint7 = unknown;
+		m_finished = false;
+		m_doStart = false;
+		m_started = false;
+		m_processed = false;
+	}
+
+	AdvancedFollowTriggerObject* m_gameObject;
 	int m_group;
 	int m_objectKey;
 	int m_controlId;
@@ -75,6 +89,14 @@ class SFXTriggerState {
 }
 
 class ChanceObject {
+	ChanceObject() {}
+	ChanceObject(int groupID, int chance) {
+		m_groupID = groupID;
+		m_oldGroupID = groupID;
+		m_chance = chance;
+		m_unk00c = 0;
+	}
+
 	int m_groupID;
 	int m_oldGroupID;
 	int m_chance;
@@ -105,7 +127,29 @@ class GameObjectPhysics {
 }
 
 class DynamicObjectAction {
-	GameObject* m_gameObject1;
+	DynamicObjectAction() {}
+	DynamicObjectAction(EffectGameObject* object, GameObject* targetObject, GameObject* centerObject) {
+		m_gameObject1 = object;
+		m_gameObject2 = targetObject;
+		m_gameObject3 = centerObject;
+		m_gameObject4 = nullptr;
+		m_gameObject5 = nullptr;
+		m_gameObject6 = nullptr;
+		m_gameObject7 = nullptr;
+		m_gameObject8 = nullptr;
+		m_unkFloat1 = 0.f;
+		m_unkFloat2 = 0.f;
+		m_unkFloat3 = 0.f;
+		m_unkBool1 = false;
+		m_unkBool2 = false;
+		m_unkBool3 = false;
+		m_unkBool4 = false;
+		m_controlID = object->m_controlID;
+		m_targetGroupID = object->m_targetGroupID;
+		m_centerGroupID = object->m_centerGroupID;
+	}
+
+	EffectGameObject* m_gameObject1;
 	GameObject* m_gameObject2;
 	GameObject* m_gameObject3;
 	GameObject* m_gameObject4;
@@ -120,9 +164,9 @@ class DynamicObjectAction {
 	bool m_unkBool2;
 	bool m_unkBool3;
 	bool m_unkBool4;
-	float m_unkFloat4;
-	float m_unkFloat5;
-	float m_unkFloat6;
+	int m_controlID;
+	int m_targetGroupID;
+	int m_centerGroupID;
 }
 
 class GJTransformState {
@@ -162,19 +206,19 @@ class CAState {
 	cocos2d::ccColor3B m_fromColor;
 	cocos2d::ccColor3B m_toColor;
 	cocos2d::ccColor3B m_color;
-	bool m_property19;
+	bool m_paused;
 	bool m_blending;
 	bool m_copyOpacity;
-	bool m_unknown;
+	bool m_legacyHSV;
 	int m_playerColor;
 	int m_colorID;
 	int m_copyID;
-	int m_unknown2;
+	int m_uniqueID;
 	float m_duration;
 	float m_fromOpacity;
 	float m_toOpacity;
 	float m_deltaTime;
-	float m_unknown3;
+	float m_currentOpacity;
 	cocos2d::ccHSVValue m_copyHSV;
 }
 
@@ -185,10 +229,10 @@ class GJPointDouble {
 
 class SavedObjectStateRef {
 	GameObject* m_gameObject;
-	double m_unkDouble1;
-	double m_unkDouble2;
-	float m_unkFloat1;
-	float m_unkFloat2;
+	double m_positionX;
+	double m_positionY;
+	float m_rotationXOffset;
+	float m_rotationYOffset;
 	float m_addToCustomScaleX;
 	float m_addToCustomScaleY;
 	float m_unkFloat3;
@@ -197,8 +241,8 @@ class SavedObjectStateRef {
 
 class SavedActiveObjectState {
 	GameObject* m_gameObject;
-	bool m_unkBool1;
-	bool m_unkBool2;
+	bool m_activatedByPlayer1;
+	bool m_activatedByPlayer2;
 }
 
 class SavedSpecialObjectState {
@@ -207,8 +251,8 @@ class SavedSpecialObjectState {
 }
 
 class SequenceTriggerState {
-	gd::unordered_map<int,float> m_unkUnorderedMap1;
-	gd::unordered_map<int,int> m_unkUnorderedMap2;
+    gd::unordered_map<int, float> m_sequenceTimes;
+    gd::unordered_map<int, int> m_sequenceIndices;
 }
 
 class FMODSoundTween {
@@ -276,7 +320,7 @@ class FMODSoundState {
 class TimerItem {
 	int m_itemID;
 	double m_time;
-	bool m_paused;
+	bool m_active;
 	float m_timeMod;
 	bool m_ignoreTimeWarp;
 	double m_targetTime;
